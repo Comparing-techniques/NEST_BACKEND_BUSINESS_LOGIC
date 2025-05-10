@@ -25,7 +25,7 @@ export class SignUpDto {
 
   @IsNotEmpty({ message: noEmptyField('name') })
   @IsString({ message: invalidString('name') })
-  @Length(8, 20, { message: invalidLength('name', 2, 20) })
+  //@Length(8, 20, { message: invalidLength('name', 8, 20) })
   name: string;
 
   @IsNotEmpty({ message: noEmptyField('lastName') })

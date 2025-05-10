@@ -17,6 +17,7 @@ export class User {
     type: 'varchar',
     length: 20,
     nullable: false,
+    unique: true,
   })
   identificationNumber: string;
 

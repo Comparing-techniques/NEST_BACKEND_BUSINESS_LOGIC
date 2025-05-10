@@ -18,7 +18,7 @@ import {
 export class JointService {
   constructor(
     @InjectRepository(Joint)
-    private jointRepository: Repository<Joint>,
+    private readonly jointRepository: Repository<Joint>,
   ) {}
 
   async create(createJointDto: CreateJointDto) {

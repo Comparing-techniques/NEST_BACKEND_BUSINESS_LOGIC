@@ -1,8 +1,9 @@
 export const invalidBoolean = (field: string) =>
   `El campo ${field} no es un booleano válido.`;
 
-export const invalidLength = (field: string, min: number, max: number) =>
-  `El campo ${field} debe tener entre ${min} y ${max} caracteres.`;
+export const invalidLength = (field: string, min: number, max: number) => {
+  return `El campo ${field} debe tener entre ${min} y ${max} caracteres.`;
+};
 
 export const noEmptyField = (field: string) =>
   `El campo ${field} no puede estar vacío.`;
