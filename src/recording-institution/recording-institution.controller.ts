@@ -6,11 +6,13 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { RecordingInstitutionService } from './recording-institution.service';
 import { CreateRecordingInstitutionDto } from './dto/create-recording-institution.dto';
 import { UpdateRecordingInstitutionDto } from './dto/update-recording-institution.dto';
-
+import { AuthGuardGuard } from 'src/auth/auth-guard/auth-guard.guard';
+@UseGuards(AuthGuardGuard)
 @Controller('recording-institution')
 export class RecordingInstitutionController {
   constructor(
@@ -18,6 +20,7 @@ export class RecordingInstitutionController {
   ) {}
 
   @Post()
+  @UseGuards(AuthGuardGuard)
   async create(
     @Body() createRecordingInstitutionDto: CreateRecordingInstitutionDto,
   ) {
@@ -37,6 +40,7 @@ export class RecordingInstitutionController {
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuardGuard)
   async update(
     @Param('id') id: string,
     @Body() updateRecordingInstitutionDto: UpdateRecordingInstitutionDto,
@@ -48,6 +52,7 @@ export class RecordingInstitutionController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuardGuard)
   async remove(@Param('id') id: string) {
     return await this.recordingInstitutionService.remove(+id);
   }

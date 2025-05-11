@@ -36,7 +36,7 @@ export class User {
   })
   email: string;
 
-  @Column({ name: 'password', type: 'varchar', length: 50, nullable: false })
+  @Column({ name: 'password', type: 'varchar', length: 250, nullable: false })
   password: string;
 
   @Column({
@@ -50,7 +50,7 @@ export class User {
   @Column({ name: 'status', type: 'boolean', default: true, nullable: false })
   status: boolean;
 
-  @ManyToOne(() => Position)
+  @ManyToOne(() => Position, { eager: true })
   @JoinColumn({ name: 'id_fk_position' })
   position: Position;
 }

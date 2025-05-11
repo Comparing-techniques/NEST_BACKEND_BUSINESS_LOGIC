@@ -66,7 +66,7 @@ export class AuthService {
         lastName,
         email,
         identificationNumber,
-        position: { id: positionId }, // opcionalmente como objeto
+        position: { id: positionId },
         password: await bcrypt.hash(password, 10),
       });
 
@@ -74,9 +74,23 @@ export class AuthService {
 
       if (!savedUser) throw new BadRequestException('Error creating user');
 
-      const position = positionEntitieToPositionResponseDto(validPositionId);
+      const position = await this.positionRepository.findOne({
+        where: { id: savedUser.position.id },
+      });
+
+      if (!position)
+        throw new BadRequestException(
+          notFoundById(savedUser.position.id, 'positionId'),
+        );
+
+      const positionResponseDto =
+        positionEntitieToPositionResponseDto(position);
       const token = await this.getJwtToken({ id: savedUser.id + '', iat: 0 });
-      return userEntitieToUserResponseDtoWithToken(newUser, position, token);
+      return userEntitieToUserResponseDtoWithToken(
+        newUser,
+        positionResponseDto,
+        token,
+      );
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
@@ -91,22 +105,61 @@ export class AuthService {
       });
 
       if (!user) throw new BadRequestException(NOT_FOUND_BY_EMAIL);
-
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) throw new UnauthorizedException(INVALID_PASSWORD);
-
-      const position = positionEntitieToPositionResponseDto(user.position);
+      const positionResponseDto = positionEntitieToPositionResponseDto(
+        user.position,
+      );
 
       const token = await this.getJwtToken({ id: user.id + '', iat: 0 });
-      return userEntitieToUserResponseDtoWithToken(user, position, token);
+      return userEntitieToUserResponseDtoWithToken(
+        user,
+        positionResponseDto,
+        token,
+      );
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  async findUserById(id: number, token: string) {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: Number(id), status: true },
+      });
+
+      if (!user) throw new BadRequestException(notFoundById(id, 'Joint'));
+
+      const position = await this.positionRepository.findOne({
+        where: { id: user.position.id },
+      });
+
+      if (!position)
+        throw new BadRequestException(
+          notFoundById(user.position.id, 'User Auth'),
+        );
+
+      const positionResponseDto =
+        positionEntitieToPositionResponseDto(position);
+
+      return userEntitieToUserResponseDtoWithToken(
+        user,
+        positionResponseDto,
+        token,
+      );
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
   }
 
   async getJwtToken(payload: JwtPayload) {
-    const token = await this.jwtService.signAsync(payload);
+    try {
+      const token = await this.jwtService.signAsync(payload);
 
-    return token;
+      return token;
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
   }
 }
