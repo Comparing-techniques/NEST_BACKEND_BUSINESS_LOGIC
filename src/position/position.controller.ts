@@ -12,6 +12,7 @@ import { PositionService } from './position.service';
 import { CreatePositionDto } from './dto/create-position.dto';
 import { UpdatePositionDto } from './dto/update-position.dto';
 import { AuthGuardGuard } from 'src/auth/auth-guard/auth-guard.guard';
+import { UserGuardGuard } from 'src/auth/auth-guard/user-guard.guard';
 
 @Controller('position')
 export class PositionController {
@@ -24,11 +25,13 @@ export class PositionController {
   }
 
   @Get()
+  @UseGuards(UserGuardGuard)
   async findAll() {
     return await this.positionService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(UserGuardGuard)
   async findOne(@Param('id') id: string) {
     return await this.positionService.findOne(+id);
   }

@@ -12,7 +12,8 @@ import { RecordingInstitutionService } from './recording-institution.service';
 import { CreateRecordingInstitutionDto } from './dto/create-recording-institution.dto';
 import { UpdateRecordingInstitutionDto } from './dto/update-recording-institution.dto';
 import { AuthGuardGuard } from 'src/auth/auth-guard/auth-guard.guard';
-@UseGuards(AuthGuardGuard)
+import { UserGuardGuard } from 'src/auth/auth-guard/user-guard.guard';
+
 @Controller('recording-institution')
 export class RecordingInstitutionController {
   constructor(
@@ -30,11 +31,13 @@ export class RecordingInstitutionController {
   }
 
   @Get()
+  @UseGuards(UserGuardGuard)
   async findAll() {
     return await this.recordingInstitutionService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(UserGuardGuard)
   async findOne(@Param('id') id: string) {
     return await this.recordingInstitutionService.findOne(+id);
   }
