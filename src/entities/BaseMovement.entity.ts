@@ -17,15 +17,15 @@ export class BaseMovement {
   @Column({ name: 'status', type: 'boolean', default: true, nullable: false })
   status: boolean;
 
-  @ManyToOne(() => ExcelFile)
+  @ManyToOne(() => ExcelFile, { eager: true })
   @JoinColumn({ name: 'id_fk_excel_file' })
   excelFile: ExcelFile;
 
-  @ManyToOne(() => Joint)
+  @ManyToOne(() => Joint, { eager: true })
   @JoinColumn({ name: 'id_fk_initial_joint' })
   initialJoint: Joint;
 
-  @ManyToOne(() => VideoRecording)
+  @ManyToOne(() => VideoRecording, { eager: true })
   @JoinColumn({ name: 'id_fk_video_recording' })
   videoRecording: VideoRecording;
 }

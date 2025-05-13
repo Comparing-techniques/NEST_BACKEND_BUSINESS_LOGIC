@@ -19,11 +19,11 @@ export class HistoricalComparison {
   @Column({ name: 'status', type: 'boolean', default: true, nullable: false })
   status: boolean;
 
-  @ManyToOne(() => BaseMovement)
+  @ManyToOne(() => BaseMovement, { eager: true })
   @JoinColumn({ name: 'id_fk_base_movement' })
   baseMovement: BaseMovement;
 
-  @ManyToOne(() => ComparativeMovement)
+  @ManyToOne(() => ComparativeMovement, { eager: true })
   @JoinColumn({ name: 'id_fk_comparative_movement' })
   comparativeMovement: ComparativeMovement;
 }

@@ -51,7 +51,7 @@ export class UserGuardGuard implements CanActivate {
     return Promise.resolve(true);
   }
 
-  private extractTokenFromHeader(request: Request) {
+  public extractTokenFromHeader(request: Request) {
     // Cast request to any to access authorization header
     const [type, token] =
       (request as any).headers.authorization?.split(' ') ?? [];

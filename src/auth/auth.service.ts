@@ -21,6 +21,9 @@ import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from 'src/utils/jwt-payload.interface';
 @Injectable()
 export class AuthService {
+  getUserById() {
+    throw new Error('Method not implemented.');
+  }
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,

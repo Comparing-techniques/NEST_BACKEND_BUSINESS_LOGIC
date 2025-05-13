@@ -26,11 +26,11 @@ export class ExcelFile {
   @Column({ name: 'status', type: 'boolean', default: true, nullable: false })
   status: boolean;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { eager: true })
   @JoinColumn({ name: 'id_fk_user_uploader' })
   uploader: User;
 
-  @ManyToOne(() => RecordingInstitution)
+  @ManyToOne(() => RecordingInstitution, { eager: true })
   @JoinColumn({ name: 'id_fk_recording_institution' })
   recordingInstitution: RecordingInstitution;
 }

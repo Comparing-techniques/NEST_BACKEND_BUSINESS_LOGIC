@@ -9,5 +9,6 @@ import { AuthModule } from '../auth/auth.module';
   imports: [TypeOrmModule.forFeature([Joint]), AuthModule],
   controllers: [JointController],
   providers: [JointService],
+  exports: [JointService],
 })
 export class JointModule {}

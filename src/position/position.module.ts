@@ -9,5 +9,6 @@ import { AuthModule } from '../auth/auth.module';
   imports: [TypeOrmModule.forFeature([Position]), AuthModule],
   controllers: [PositionController],
   providers: [PositionService],
+  exports: [PositionService],
 })
 export class PositionModule {}

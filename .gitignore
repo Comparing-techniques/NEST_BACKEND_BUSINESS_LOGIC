@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+#Ignore Firebase files
+/firebasekeys.json
+
 # Logs
 logs
 *.log
