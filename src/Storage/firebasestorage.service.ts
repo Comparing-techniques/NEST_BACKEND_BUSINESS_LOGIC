@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   Inject,
@@ -25,7 +23,6 @@ export class FirebaseStorageService {
 
       await fileUpload.makePublic();
       const publicUrl = `https://storage.googleapis.com/${this.bucket.name}/${filename}`;
-      console.log(publicUrl);
       return publicUrl;
     } catch (err) {
       throw new InternalServerErrorException(

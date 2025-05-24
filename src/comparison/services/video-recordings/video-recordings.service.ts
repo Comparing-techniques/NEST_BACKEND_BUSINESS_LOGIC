@@ -30,18 +30,17 @@ export class VideoRecordingsService {
     try {
       const filePath = `video/${saveVideoRecordingRequestDto.fileName}`;
 
-      console.log('Subiendo video...');
-      await this.firebaseStorageService.uploadFile(
+      const videoUrl = await this.firebaseStorageService.uploadFile(
         saveVideoRecordingRequestDto.videoFile,
         filePath,
       );
       const videoRecording = this.videoRecordingRepository.create({
         filename: saveVideoRecordingRequestDto.fileName,
+        fileUrl: videoUrl,
       });
 
       const savedVideoRecording =
         await this.videoRecordingRepository.save(videoRecording);
-      console.log('Subido y almacenado...');
       return savedVideoRecording;
     } catch (error) {
       throw new InternalServerErrorException(error);

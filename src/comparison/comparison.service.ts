@@ -1,8 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   BadRequestException,
   Injectable,
@@ -30,6 +27,8 @@ import { baseExcelEntitieToBaseExcelFileResponseDto } from 'src/mappers/ExcelFil
 import { videoRecordingEntitieToVideoRecordingResponseDto } from 'src/mappers/VideoRecording.mapper';
 import { jointEntitieToJointResponseDto } from 'src/mappers/Joint.mapper';
 import { userEntitieToUserResponseDtoWithToken } from 'src/mappers/Auth.mapper';
+import { HistoricalComparisonsService } from './services/historical-comparisons/historical-comparisons.service';
+import { FeedbackConnectionService } from './services/feedback-connection/feedback-connection.service';
 
 @Injectable()
 export class ComparisonService {
@@ -41,10 +40,19 @@ export class ComparisonService {
     private readonly excelFilesService: ExcelFilesService,
     private readonly jointService: JointService,
     private readonly authService: AuthService,
+    private readonly feedbackConnectionService: FeedbackConnectionService,
   ) {}
 
   create(createComparisonDto: CreateComparisonDto) {
-    console.log('createComparisonDto', createComparisonDto);
+    try {
+      //TODO: Hay que crear un dto de response de acuerdo a la respuesta que arroje (En el back de python podras ver la estructra mejor)
+      // En la db hay una tabla llamada: Historical comparisons y comparative movements
+      // En el request solo reciba un archivo excel (Excel a comparar), id de la articulacion y id de el excel en BaseMovement (Excel del experto)
+      // Revisa el servicio de abajo como trabaja con la db, como sube el excel a firebase (El excel a comparar debe subirse a firebase)
+      return this.feedbackConnectionService.getFeedbackFromConnection();
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
   }
 
   async createBaseMovement(baseMovementRequest: CreateBaseMovementRequestDto) {
@@ -112,8 +120,12 @@ export class ComparisonService {
           baseExcelEntitieToBaseExcelFileResponseDto(
             excelRecorded,
             recordingInstitution,
+            excelRecorded.fileUrl,
           ),
-          videoRecordingEntitieToVideoRecordingResponseDto(videoRecorded),
+          videoRecordingEntitieToVideoRecordingResponseDto(
+            videoRecorded,
+            videoRecorded.fileUrl,
+          ),
           jointEntitieToJointResponseDto(initialJoint),
           userCreator,
         );
