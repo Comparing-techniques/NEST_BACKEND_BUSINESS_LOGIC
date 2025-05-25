@@ -36,38 +36,45 @@ export class ComparisonController {
     @UploadedFiles() files: Array<Express.Multer.File>,
     @Body() body: any,
   ) {
-    const fileMap: { [key: string]: Express.Multer.File } = {};
-    const keys = Object.keys(fileMap);
+    try {
+      const fileMap: { [key: string]: Express.Multer.File } = {};
+      const keys = Object.keys(fileMap);
+      console.log('keys', keys);
 
-    console.log(keys);
+      if (!keys || keys.length === 0) {
+        throw new BadRequestException(noFilesProvided());
+      }
 
-    if (!keys || keys.length === 0) {
-      throw new BadRequestException(noFilesProvided());
-    }
+      if (keys.length !== 2) {
+        throw new BadRequestException(noTwoFilesProvided());
+      }
 
-    if (keys.length !== 2) {
-      throw new BadRequestException(noTwoFilesProvided());
-    }
+      files.forEach((file) => {
+        fileMap[file.fieldname] = file;
+      });
 
-    files.forEach((file) => {
-      fileMap[file.fieldname] = file;
-    });
-
-    const createComparisonDtoToService = plainToInstance(CreateComparisonDto, {
-      base_excel_file: fileMap['base_excel_file'],
-      excel_file_compare: fileMap['excel_file_compare'],
-      joint_id: body.joint_id.toString(),
-    });
-    const errors = await validate(createComparisonDtoToService);
-    if (errors.length > 0)
-      throw new BadRequestException(
-        errors.map((e) => ({
-          property: e.property,
-          constraints: e.constraints,
-        })),
+      const createComparisonDtoToService = plainToInstance(
+        CreateComparisonDto,
+        {
+          base_excel_file: fileMap['base_excel_file'],
+          excel_file_compare: fileMap['excel_file_compare'],
+          joint_id: body.joint_id.toString(),
+        },
       );
-
-    return this.comparisonService.create(createComparisonDtoToService);
+      const errors = await validate(createComparisonDtoToService);
+      if (errors.length > 0)
+        throw new BadRequestException(
+          errors.map((e) => ({
+            property: e.property,
+            constraints: e.constraints,
+          })),
+        );
+      const respo = this.comparisonService.create(createComparisonDtoToService);
+      console.log(respo);
+      return respo;
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @Post('/add-base-movement')

@@ -26,6 +26,9 @@ export class ExcelFile {
   @Column({ name: 'status', type: 'boolean', default: true, nullable: false })
   status: boolean;
 
+  @Column({ name: 'fileurl', type: 'varchar', length: 300, nullable: false })
+  fileUrl: string;
+
   @ManyToOne(() => User, { eager: true })
   @JoinColumn({ name: 'id_fk_user_uploader' })
   uploader: User;

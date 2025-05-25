@@ -14,6 +14,9 @@ export class VideoRecording {
   })
   filename: string;
 
+  @Column({ name: 'fileurl', type: 'varchar', length: 300, nullable: false })
+  fileUrl: string;
+
   @Column({ name: 'status', type: 'boolean', default: true })
   status: boolean;
 }

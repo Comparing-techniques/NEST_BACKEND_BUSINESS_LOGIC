@@ -4,5 +4,6 @@ export class SaveExcelFileResponseDto {
   id: number;
   filename: string;
   recordingInstitution: RecordingInstitutionResponseDto;
+  fileurl: string;
   status: boolean;
 }

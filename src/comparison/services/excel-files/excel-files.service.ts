@@ -33,22 +33,22 @@ export class ExcelFilesService {
     try {
       const filePath = `excel/${saveExcelFileRequestDto.fileName}`;
 
-      console.log('Subiendo Excel...');
-      await this.firebaseStorageService.uploadFile(
+      const excelUrl = await this.firebaseStorageService.uploadFile(
         saveExcelFileRequestDto.file,
         filePath,
       );
+
       const excelFileObj = this.excelFileRepository.create({
         filename: saveExcelFileRequestDto.fileName,
         uploader: { id: userId } as User,
         recordingInstitution: {
           id: recordingInstitutionId,
         } as RecordingInstitution,
+        fileUrl: excelUrl,
       });
 
       const savedExcelRecording =
         await this.excelFileRepository.save(excelFileObj);
-      console.log('Subido y almacenado...');
       return savedExcelRecording;
     } catch (error) {
       throw new InternalServerErrorException(error);
