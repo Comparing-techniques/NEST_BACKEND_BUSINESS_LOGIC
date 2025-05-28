@@ -13,7 +13,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { ComparisonService } from './comparison.service';
-import { CreateComparisonDto } from './dto/create-comparison.dto';
+import { CreateComparisonRequestDto } from './dto/CreateComparisonRequest.dto';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { UserGuardGuard } from 'src/auth/auth-guard/user-guard.guard';
 import { plainToInstance } from 'class-transformer';
@@ -38,14 +38,12 @@ export class ComparisonController {
   ) {
     try {
       const fileMap: { [key: string]: Express.Multer.File } = {};
-      const keys = Object.keys(fileMap);
-      console.log('keys', keys);
 
-      if (!keys || keys.length === 0) {
+      if (!files || files.length === 0) {
         throw new BadRequestException(noFilesProvided());
       }
 
-      if (keys.length !== 2) {
+      if (files.length !== 2) {
         throw new BadRequestException(noTwoFilesProvided());
       }
 
@@ -53,14 +51,21 @@ export class ComparisonController {
         fileMap[file.fieldname] = file;
       });
 
+      if (!fileMap['excelFileCompare']) {
+        throw new BadRequestException(noFilesProvided());
+      }
+
       const createComparisonDtoToService = plainToInstance(
-        CreateComparisonDto,
+        CreateComparisonRequestDto,
         {
-          base_excel_file: fileMap['base_excel_file'],
-          excel_file_compare: fileMap['excel_file_compare'],
-          joint_id: body.joint_id.toString(),
+          userId: body.userId,
+          recordingInstitutionId: body.recordingInstitutionId,
+          baseExcelFileId: body.baseExcelFileId,
+          excelFileCompare: fileMap['excelFileCompare'],
+          videoRecordingFile: fileMap['videoRecordingFile'],
         },
       );
+
       const errors = await validate(createComparisonDtoToService);
       if (errors.length > 0)
         throw new BadRequestException(
@@ -69,9 +74,10 @@ export class ComparisonController {
             constraints: e.constraints,
           })),
         );
-      const respo = this.comparisonService.create(createComparisonDtoToService);
-      console.log(respo);
-      return respo;
+
+      const response = await this.comparisonService.create(createComparisonDtoToService);
+      return response;
+      
     } catch (error) {
       throw new InternalServerErrorException(error);
     }

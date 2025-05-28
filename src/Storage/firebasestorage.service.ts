@@ -30,4 +30,23 @@ export class FirebaseStorageService {
       );
     }
   }
+
+  async downloadFileToBuffer(filePath: string): Promise<Buffer> {
+    const file = this.bucket.file(filePath);
+
+    try {
+      const [exists] = await file.exists();
+      if (!exists) {
+        throw new Error(`El archivo ${filePath} no existe en Firebase.`);
+      }
+
+      const [contents] = await file.download();
+      return contents;
+    } catch (err) {
+      throw new InternalServerErrorException(
+        'Error al descargar archivo de Firebase: ' + err.message,
+      );
+    }
+  }
+
 }

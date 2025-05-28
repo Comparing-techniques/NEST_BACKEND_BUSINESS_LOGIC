@@ -5,7 +5,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { CreateComparisonDto } from './dto/create-comparison.dto';
+import { CreateComparisonRequestDto } from './dto/CreateComparisonRequest.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { JointService } from 'src/joint/joint.service';
 import { RecordingInstitutionService } from 'src/recording-institution/recording-institution.service';
@@ -43,17 +43,96 @@ export class ComparisonService {
     private readonly feedbackConnectionService: FeedbackConnectionService,
   ) {}
 
-  create(createComparisonDto: CreateComparisonDto) {
+  async create(createComparisonDto: CreateComparisonRequestDto) {
     try {
-      //TODO: Hay que crear un dto de response de acuerdo a la respuesta que arroje (En el back de python podras ver la estructra mejor)
-      // En la db hay una tabla llamada: Historical comparisons y comparative movements
-      // En el request solo reciba un archivo excel (Excel a comparar), id de la articulacion y id de el excel en BaseMovement (Excel del experto)
-      // Revisa el servicio de abajo como trabaja con la db, como sube el excel a firebase (El excel a comparar debe subirse a firebase)
-      return this.feedbackConnectionService.getFeedbackFromConnection();
+      const { userId, recordingInstitutionId, baseExcelFileId, excelFileCompare, videoRecordingFile } = createComparisonDto;
+
+      const userCreator = await this.authService.findUserById(
+        parseInt(userId),
+        'token',
+      );
+
+      if (!userCreator)
+        throw new BadRequestException(
+          notFoundById(parseInt(userId), 'User'),
+        );
+
+      const recordingInstitution =
+        await this.recordingInstitutionService.findOne(
+          parseInt(recordingInstitutionId),
+        );
+      
+      if (!recordingInstitution)
+        throw new BadRequestException(
+          notFoundById(
+            parseInt(recordingInstitutionId),
+            'Recording Institution',
+          ),
+        );
+
+      const baseMovement = await this.baseMovementRepository.findOne({
+        where: { id: parseInt(baseExcelFileId) },
+        relations: ['excelFile'],
+      });
+
+      if (!baseMovement)
+        throw new BadRequestException(notFoundById(baseExcelFileId, 'Base Excel File'));
+
+      if (!isAllowedExtension(excelFileCompare, 'excel'))
+        throw new BadRequestException(invalidFileType(excelFileCompare.originalname));
+
+      const excelRecordedCompare = await this.excelFilesService.createExcelRecording(
+        {
+          fileName: excelFileCompare.originalname,
+          file: excelFileCompare,
+        },
+        userCreator.id,
+        parseInt(recordingInstitution.id),
+      );
+
+      const videoRecorded =
+        await this.videoRecordingsService.createVideoRecording({
+          fileName: videoRecordingFile.originalname,
+          videoFile: videoRecordingFile,
+        });
+
+      const excelCompareMovementToDB = this.baseMovementRepository.create({
+        excelFile: excelRecordedCompare,
+        videoRecording: videoRecorded,
+        initialJoint: baseMovement.initialJoint,
+      });
+
+      const compareMovement =
+        await this.baseMovementRepository.save(excelCompareMovementToDB);
+
+      // TODO: Aquí vendrá la lógica para subir el archivo a Firebase,
+      // crear la comparación, llamar al backend de feedback, guardar en la tabla
+      // HistoricalComparisons y ComparativeMovements
+
+      // const baseMovementResponseDto: CreateBaseMovementResponseDto =
+      //   baseMovementEntitieToBaseMovementResponseDto(
+      //     baseMovement,
+      //     baseExcelEntitieToBaseExcelFileResponseDto(
+      //       excelRecorded,
+      //       recordingInstitution,
+      //       excelRecorded.fileUrl,
+      //     ),
+      //     videoRecordingEntitieToVideoRecordingResponseDto(
+      //       videoRecorded,
+      //       videoRecorded.fileUrl,
+      //     ),
+      //     jointEntitieToJointResponseDto(initialJoint),
+      //     userCreator,
+      //   );
+
+      return {
+        message: 'Validaciones exitosas, proceder a subir archivo y generar comparación',
+      };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
   }
+
 
   async createBaseMovement(baseMovementRequest: CreateBaseMovementRequestDto) {
     try {
@@ -90,6 +169,7 @@ export class ComparisonService {
         throw new BadRequestException(
           notFoundById(parseInt(baseMovementRequest.initialJointId), 'Joint'),
         );
+
       const videoRecorded =
         await this.videoRecordingsService.createVideoRecording({
           fileName: baseMovementRequest.videoRecordingFile.originalname,

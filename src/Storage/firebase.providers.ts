@@ -9,6 +9,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { Bucket } from '@google-cloud/storage';
 
+
 @Injectable()
 export class FirebaseAdminProvider {
   private readonly firebaseApp: admin.app.App;
@@ -31,7 +32,6 @@ export class FirebaseAdminProvider {
 
     const serviceAccount = require(absolutePath);
 
-    // 🛠️ Verifica que tengas configurado correctamente el bucket
     const storageBucket =
       serviceAccount.storageBucket ||
       this.configService.get<string>('FIREBASE_STORAGE');

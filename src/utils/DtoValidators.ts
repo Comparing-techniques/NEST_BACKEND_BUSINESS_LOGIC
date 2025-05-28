@@ -26,5 +26,5 @@ export const PASSWORD_INVALID_REGEX =
 export const alreadyExists = (value: string, field: string, entity: string) =>
   `El valor ${value} en ${field} ya existe en ${entity}.`;
 
-export const notFoundById = (id: number, entity: string) =>
+export const notFoundById = (id: number | string, entity: string) =>
   `No se encontró entidad en ${entity} con el id ${id}.`;
