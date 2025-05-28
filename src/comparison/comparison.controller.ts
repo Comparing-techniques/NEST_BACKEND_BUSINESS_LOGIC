@@ -21,6 +21,7 @@ import { validate } from 'class-validator';
 import { CreateBaseMovementRequestDto } from './dto/BaseMovement/CreateBaseMovementRequest.dto';
 import {
   noFilesProvided,
+  noOneFilesProvided,
   noTwoFilesProvided,
 } from 'src/utils/FilesValidations';
 
@@ -43,8 +44,8 @@ export class ComparisonController {
         throw new BadRequestException(noFilesProvided());
       }
 
-      if (files.length !== 2) {
-        throw new BadRequestException(noTwoFilesProvided());
+      if (files.length !== 1) {
+        throw new BadRequestException(noOneFilesProvided());
       }
 
       files.forEach((file) => {
@@ -62,7 +63,6 @@ export class ComparisonController {
           recordingInstitutionId: body.recordingInstitutionId,
           baseExcelFileId: body.baseExcelFileId,
           excelFileCompare: fileMap['excelFileCompare'],
-          videoRecordingFile: fileMap['videoRecordingFile'],
         },
       );
 

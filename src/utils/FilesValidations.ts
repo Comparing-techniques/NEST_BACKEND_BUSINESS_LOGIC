@@ -16,6 +16,10 @@ export const noTwoFilesProvided = (): string => {
   return 'No se han proporcionado dos archivos (Video y Excel)';
 };
 
+export const noOneFilesProvided = (): string => {
+  return 'No se ha proporcionado el archivos excel';
+};
+
 export const fileAlreadyExists = (
   fileName: string,
   fileType: string,

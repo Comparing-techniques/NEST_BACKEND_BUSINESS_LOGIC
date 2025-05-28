@@ -17,7 +17,7 @@ import {
   invalidFileType,
   isAllowedExtension,
 } from 'src/utils/FilesValidations';
-import { BaseMovement, User } from 'src/entities';
+import { BaseMovement } from 'src/entities';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { notFoundById } from 'src/utils/DtoValidators';
@@ -26,26 +26,33 @@ import { baseMovementEntitieToBaseMovementResponseDto } from 'src/mappers/BaseMo
 import { baseExcelEntitieToBaseExcelFileResponseDto } from 'src/mappers/ExcelFile.mapper';
 import { videoRecordingEntitieToVideoRecordingResponseDto } from 'src/mappers/VideoRecording.mapper';
 import { jointEntitieToJointResponseDto } from 'src/mappers/Joint.mapper';
-import { userEntitieToUserResponseDtoWithToken } from 'src/mappers/Auth.mapper';
-import { HistoricalComparisonsService } from './services/historical-comparisons/historical-comparisons.service';
 import { FeedbackConnectionService } from './services/feedback-connection/feedback-connection.service';
+import { FirebaseStorageService } from 'src/Storage/firebasestorage.service';
+import { ComparativeMovementsService } from './services/comparative-movements/comparative-movements.service';
+import { ComparativeMovementRequestDto } from './dto/CompartiveMovement/ComparativeMovementRequest.dto';
+import { HistoricalComparisonsService } from './services/historical-comparisons/historical-comparisons.service';
+
 
 @Injectable()
 export class ComparisonService {
   constructor(
     @InjectRepository(BaseMovement)
     private readonly baseMovementRepository: Repository<BaseMovement>,
-    private readonly recordingInstitutionService: RecordingInstitutionService,
-    private readonly videoRecordingsService: VideoRecordingsService,
-    private readonly excelFilesService: ExcelFilesService,
-    private readonly jointService: JointService,
+
     private readonly authService: AuthService,
+    private readonly jointService: JointService,
+    private readonly excelFilesService: ExcelFilesService,
+    private readonly videoRecordingsService: VideoRecordingsService,
+    private readonly firebaseStorageService: FirebaseStorageService,
     private readonly feedbackConnectionService: FeedbackConnectionService,
+    private readonly recordingInstitutionService: RecordingInstitutionService,
+    private readonly comparativeMovementsService: ComparativeMovementsService,
+    private readonly historicalComparisonsService: HistoricalComparisonsService,
   ) {}
 
   async create(createComparisonDto: CreateComparisonRequestDto) {
     try {
-      const { userId, recordingInstitutionId, baseExcelFileId, excelFileCompare, videoRecordingFile } = createComparisonDto;
+      const { userId, recordingInstitutionId, baseExcelFileId, excelFileCompare } = createComparisonDto;
 
       const userCreator = await this.authService.findUserById(
         parseInt(userId),
@@ -81,7 +88,7 @@ export class ComparisonService {
       if (!isAllowedExtension(excelFileCompare, 'excel'))
         throw new BadRequestException(invalidFileType(excelFileCompare.originalname));
 
-      const excelRecordedCompare = await this.excelFilesService.createExcelRecording(
+      const excelCompareFile = await this.excelFilesService.createExcelRecording(
         {
           fileName: excelFileCompare.originalname,
           file: excelFileCompare,
@@ -90,49 +97,44 @@ export class ComparisonService {
         parseInt(recordingInstitution.id),
       );
 
-      const videoRecorded =
-        await this.videoRecordingsService.createVideoRecording({
-          fileName: videoRecordingFile.originalname,
-          videoFile: videoRecordingFile,
-        });
+      const buffer = await this.firebaseStorageService.downloadFileToBuffer(
+        `excel/${baseMovement.excelFile.filename}/${baseMovement.excelFile.filename}`,
+      );
 
-      const excelCompareMovementToDB = this.baseMovementRepository.create({
-        excelFile: excelRecordedCompare,
-        videoRecording: videoRecorded,
-        initialJoint: baseMovement.initialJoint,
+      const baseExcelFile: Express.Multer.File = {
+        originalname: baseMovement.excelFile.filename,
+        mimetype:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        buffer,
+      } as Express.Multer.File;
+
+      if (!excelCompareFile) {
+        throw new InternalServerErrorException('No se encontró el archivo Excel registrado.');
+      }
+
+      const comparativeMovement = await this.comparativeMovementsService.createComparativeMovement({
+        excelFileId: excelCompareFile.id,
+        status: true,
       });
 
-      const compareMovement =
-        await this.baseMovementRepository.save(excelCompareMovementToDB);
+      await this.historicalComparisonsService.createHistoricalComparison({
+        baseMovementId: baseMovement.id,
+        comparativeMovementId: comparativeMovement.id,
+        status: true,
+      });
 
-      // TODO: Aquí vendrá la lógica para subir el archivo a Firebase,
-      // crear la comparación, llamar al backend de feedback, guardar en la tabla
-      // HistoricalComparisons y ComparativeMovements
+      const feedbackResult = await this.feedbackConnectionService.sendFeedbackRequest(
+        baseExcelFile,
+        excelFileCompare,
+        baseMovement.initialJoint.id,
+      );
+      
+      return feedbackResult;
 
-      // const baseMovementResponseDto: CreateBaseMovementResponseDto =
-      //   baseMovementEntitieToBaseMovementResponseDto(
-      //     baseMovement,
-      //     baseExcelEntitieToBaseExcelFileResponseDto(
-      //       excelRecorded,
-      //       recordingInstitution,
-      //       excelRecorded.fileUrl,
-      //     ),
-      //     videoRecordingEntitieToVideoRecordingResponseDto(
-      //       videoRecorded,
-      //       videoRecorded.fileUrl,
-      //     ),
-      //     jointEntitieToJointResponseDto(initialJoint),
-      //     userCreator,
-      //   );
-
-      return {
-        message: 'Validaciones exitosas, proceder a subir archivo y generar comparación',
-      };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
   }
-
 
   async createBaseMovement(baseMovementRequest: CreateBaseMovementRequestDto) {
     try {

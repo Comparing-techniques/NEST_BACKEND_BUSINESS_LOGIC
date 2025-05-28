@@ -28,11 +28,6 @@ export class CreateComparisonRequestDto {
   @IsDefined({ message: noEmptyField('baseExcelFileId en CreateComparison') })
   @IsString({ message: invalidString('baseExcelFileId en CreateComparison') })
   baseExcelFileId: string;
-
-  @IsDefined({
-    message: noEmptyField('videoRecordingFile en CreateComparison'),
-  })
-  videoRecordingFile: Express.Multer.File;
   
   @IsDefined({ 
     message: noEmptyField('excelFileCompare en CreateComparison') 

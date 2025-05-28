@@ -9,16 +9,21 @@ import { ExcelFilesService } from './services/excel-files/excel-files.service';
 import { BaseMovementsService } from './services/base-movements/base-movements.service';
 import { JointModule } from 'src/joint/joint.module';
 import { RecordingInstitutionModule } from 'src/recording-institution/recording-institution.module';
-import { BaseMovement, ExcelFile, VideoRecording } from 'src/entities';
+import { BaseMovement, ComparativeMovement, ExcelFile, HistoricalComparison, VideoRecording } from 'src/entities';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppModule } from 'src/app.module';
 import { FeedbackConnectionService } from './services/feedback-connection/feedback-connection.service';
+import { ComparativeMovementsService } from './services/comparative-movements/comparative-movements.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ExcelFile]),
-    TypeOrmModule.forFeature([VideoRecording]),
-    TypeOrmModule.forFeature([BaseMovement]),
+    TypeOrmModule.forFeature([
+      ExcelFile,
+      VideoRecording,
+      BaseMovement,
+      HistoricalComparison,
+      ComparativeMovement
+    ]),
     AuthModule,
     HttpModule,
     RecordingInstitutionModule,
@@ -33,6 +38,11 @@ import { FeedbackConnectionService } from './services/feedback-connection/feedba
     ExcelFilesService,
     BaseMovementsService,
     FeedbackConnectionService,
+    ComparativeMovementsService,
+    HistoricalComparisonsService,
   ],
+  exports: [
+    HistoricalComparisonsService,
+  ]
 })
 export class ComparisonModule {}

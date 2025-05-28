@@ -25,6 +25,13 @@ export class ExcelFilesService {
     }
   }
 
+  async findOneExcelFileByFileName(fileName: string): Promise<number | null> {
+    const file = await this.excelFileRepository.findOne({
+      where: { filename: fileName },
+    });
+    return file ? file.id : null;
+  }
+
   async createExcelRecording(
     saveExcelFileRequestDto: SaveExcelFileRequestDto,
     userId: number,
