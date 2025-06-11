@@ -9,6 +9,7 @@ import {
 } from 'src/utils/DtoValidators';
 
 export class UpdatePositionDto extends PartialType(CreatePositionDto) {
+  
   @IsOptional()
   @IsString({ message: invalidString('description') })
   @Length(2, 30, { message: invalidLength('description', 2, 30) })

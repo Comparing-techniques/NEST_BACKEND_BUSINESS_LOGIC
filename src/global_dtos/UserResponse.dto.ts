@@ -9,5 +9,5 @@ export class UserResponseDto {
   superuser: boolean;
   status: boolean;
   position: positionResponseDto;
-  token: string;
+  token?: string;
 }

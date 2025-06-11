@@ -11,6 +11,7 @@ import { ComparisonModule } from './comparison/comparison.module';
 import { FirebaseAdminProvider } from './Storage/firebase.providers';
 import { FirebaseStorageService } from './Storage/firebasestorage.service';
 import { Bucket } from '@google-cloud/storage';
+import { UserModule } from './user/user.module';
 const { DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME, DB_LOGGING } = process.env;
 
 @Module({
@@ -34,6 +35,7 @@ const { DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME, DB_LOGGING } = process.env;
     JointModule,
     RecordingInstitutionModule,
     ComparisonModule,
+    UserModule
   ],
   controllers: [],
   providers: [

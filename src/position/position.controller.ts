@@ -25,7 +25,6 @@ export class PositionController {
   }
 
   @Get()
-  @UseGuards(UserGuardGuard)
   async findAll() {
     return await this.positionService.findAll();
   }

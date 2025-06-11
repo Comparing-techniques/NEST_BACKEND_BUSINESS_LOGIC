@@ -19,6 +19,8 @@ import { positionEntitieToPositionResponseDto } from 'src/mappers/Position.mappe
 import { INVALID_PASSWORD, NOT_FOUND_BY_EMAIL } from 'src/utils/AuthValidators';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from 'src/utils/jwt-payload.interface';
+
+
 @Injectable()
 export class AuthService {
   getUserById() {
