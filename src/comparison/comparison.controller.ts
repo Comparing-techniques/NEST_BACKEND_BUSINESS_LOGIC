@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
@@ -11,6 +9,8 @@ import {
   UploadedFiles,
   BadRequestException,
   InternalServerErrorException,
+  Get,
+  Param,
 } from '@nestjs/common';
 import { ComparisonService } from './comparison.service';
 import { CreateComparisonRequestDto } from './dto/CreateComparisonRequest.dto';
@@ -29,6 +29,14 @@ import {
 export class ComparisonController {
   UserGuardGuard: any;
   constructor(private readonly comparisonService: ComparisonService) {}
+
+  @Get('/historical/:id')
+  @UseGuards(UserGuardGuard)
+  async findOne(@Param('id') historicalId: number) {
+    return await this.comparisonService.getComparisonByHistoricalId(
+      historicalId,
+    );
+  }
 
   @Post()
   @UseGuards(UserGuardGuard)
@@ -75,9 +83,10 @@ export class ComparisonController {
           })),
         );
 
-      const response = await this.comparisonService.create(createComparisonDtoToService);
+      const response = await this.comparisonService.create(
+        createComparisonDtoToService,
+      );
       return response;
-      
     } catch (error) {
       throw new InternalServerErrorException(error);
     }

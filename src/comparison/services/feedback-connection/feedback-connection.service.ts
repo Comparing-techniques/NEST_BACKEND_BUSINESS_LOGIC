@@ -5,32 +5,41 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { lastValueFrom, map } from 'rxjs';
 import * as FormData from 'form-data';
 import { FEEDBACK_PETITION_ERROR } from 'src/utils/FeedbackValidators';
+import { ComparisonResponse } from 'src/comparison/dto/ComparisonResponse.dto';
 
 @Injectable()
 export class FeedbackConnectionService {
-
-  constructor( private readonly httpService: HttpService ) {}
+  constructor(private readonly httpService: HttpService) {}
 
   async sendFeedbackRequest(
     baseExcelFile: Partial<Express.Multer.File>,
     excelFileCompare: Express.Multer.File,
     jointId: number,
-  ): Promise<any> {
+  ): Promise<ComparisonResponse> {
     try {
+      console.clear();
+      console.log(baseExcelFile.filename);
       const formData = new FormData();
-      
-      if ( !baseExcelFile.buffer || !baseExcelFile.originalname || !baseExcelFile.mimetype ) {
+
+      if (
+        !baseExcelFile.buffer ||
+        !baseExcelFile.originalname ||
+        !baseExcelFile.mimetype
+      ) {
         throw new InternalServerErrorException(
           'Faltan datos en baseExcelFile para enviar al backend de feedback.',
         );
       }
 
-      if ( !excelFileCompare.buffer || !excelFileCompare.originalname || !excelFileCompare.mimetype ) {
+      if (
+        !excelFileCompare.buffer ||
+        !excelFileCompare.originalname ||
+        !excelFileCompare.mimetype
+      ) {
         throw new InternalServerErrorException(
           'Faltan datos en excelFileCompare para enviar al backend de feedback.',
         );
       }
-
       formData.append('base_excel_file', baseExcelFile.buffer, {
         filename: baseExcelFile.originalname,
         contentType: baseExcelFile.mimetype,
@@ -40,22 +49,16 @@ export class FeedbackConnectionService {
         filename: excelFileCompare.originalname,
         contentType: excelFileCompare.mimetype,
       });
-
       formData.append('joint_id', jointId.toString());
 
       const headers = formData.getHeaders();
-
-      const response$ = this.httpService.post(
-        `${process.env.FEEDBACK_URL}`, // o el path correcto
-        formData,
-        { headers },
-      ).pipe(map(res => res.data));
+      const response$ = this.httpService
+        .post(`${process.env.FEEDBACK_URL}`, formData, { headers })
+        .pipe(map((res) => res.data));
 
       return await lastValueFrom(response$);
-
     } catch (error) {
       throw new InternalServerErrorException(FEEDBACK_PETITION_ERROR);
     }
   }
-
 }

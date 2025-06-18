@@ -1,8 +1,11 @@
 import { IsDefined, IsString, Matches } from 'class-validator';
-import { invalidInt, invalidString, noEmptyField } from 'src/utils/DtoValidators';
+import {
+  invalidInt,
+  invalidString,
+  noEmptyField,
+} from 'src/utils/DtoValidators';
 
 export class CreateComparisonRequestDto {
-
   @IsDefined({ message: noEmptyField('userId en CreateComparison') })
   @IsString({ message: invalidString('userId en CreateComparison') })
   @Matches(/^[1-9]\d*$/, {
@@ -11,14 +14,10 @@ export class CreateComparisonRequestDto {
   userId: string;
 
   @IsDefined({
-    message: noEmptyField(
-      'recordingInstitutionId en CreateComparison',
-    ),
+    message: noEmptyField('recordingInstitutionId en CreateComparison'),
   })
   @IsString({
-    message: invalidString(
-      'recordingInstitutionId en CreateComparison',
-    ),
+    message: invalidString('recordingInstitutionId en CreateComparison'),
   })
   @Matches(/^[1-9]\d*$/, {
     message: invalidInt('recordingInstitutionId en CreateComparison'),
@@ -28,10 +27,9 @@ export class CreateComparisonRequestDto {
   @IsDefined({ message: noEmptyField('baseExcelFileId en CreateComparison') })
   @IsString({ message: invalidString('baseExcelFileId en CreateComparison') })
   baseExcelFileId: string;
-  
-  @IsDefined({ 
-    message: noEmptyField('excelFileCompare en CreateComparison') 
+
+  @IsDefined({
+    message: noEmptyField('excelFileCompare en CreateComparison'),
   })
   excelFileCompare: Express.Multer.File;
-
 }

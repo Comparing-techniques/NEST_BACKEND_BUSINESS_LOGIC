@@ -31,7 +31,7 @@ import { FirebaseStorageService } from 'src/Storage/firebasestorage.service';
 import { ComparativeMovementsService } from './services/comparative-movements/comparative-movements.service';
 import { ComparativeMovementRequestDto } from './dto/CompartiveMovement/ComparativeMovementRequest.dto';
 import { HistoricalComparisonsService } from './services/historical-comparisons/historical-comparisons.service';
-
+import { ComparisonResponse } from './dto/ComparisonResponse.dto';
 
 @Injectable()
 export class ComparisonService {
@@ -50,9 +50,30 @@ export class ComparisonService {
     private readonly historicalComparisonsService: HistoricalComparisonsService,
   ) {}
 
+  async getComparisonByHistoricalId(historicalId: number) {
+    try {
+      const historicalComparison: ComparisonResponse =
+        await this.historicalComparisonsService.findOne(historicalId);
+
+      if (!historicalComparison)
+        throw new BadRequestException(
+          notFoundById(historicalId, 'Historical Comparison'),
+        );
+
+      return historicalComparison;
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
+
   async create(createComparisonDto: CreateComparisonRequestDto) {
     try {
-      const { userId, recordingInstitutionId, baseExcelFileId, excelFileCompare } = createComparisonDto;
+      const {
+        userId,
+        recordingInstitutionId,
+        baseExcelFileId,
+        excelFileCompare,
+      } = createComparisonDto;
 
       const userCreator = await this.authService.findUserById(
         parseInt(userId),
@@ -60,15 +81,13 @@ export class ComparisonService {
       );
 
       if (!userCreator)
-        throw new BadRequestException(
-          notFoundById(parseInt(userId), 'User'),
-        );
+        throw new BadRequestException(notFoundById(parseInt(userId), 'User'));
 
       const recordingInstitution =
         await this.recordingInstitutionService.findOne(
           parseInt(recordingInstitutionId),
         );
-      
+
       if (!recordingInstitution)
         throw new BadRequestException(
           notFoundById(
@@ -83,19 +102,24 @@ export class ComparisonService {
       });
 
       if (!baseMovement)
-        throw new BadRequestException(notFoundById(baseExcelFileId, 'Base Excel File'));
+        throw new BadRequestException(
+          notFoundById(baseExcelFileId, 'Base Excel File'),
+        );
 
       if (!isAllowedExtension(excelFileCompare, 'excel'))
-        throw new BadRequestException(invalidFileType(excelFileCompare.originalname));
+        throw new BadRequestException(
+          invalidFileType(excelFileCompare.originalname),
+        );
 
-      const excelCompareFile = await this.excelFilesService.createExcelRecording(
-        {
-          fileName: excelFileCompare.originalname,
-          file: excelFileCompare,
-        },
-        userCreator.id,
-        parseInt(recordingInstitution.id),
-      );
+      const excelCompareFile =
+        await this.excelFilesService.createExcelRecording(
+          {
+            fileName: excelFileCompare.originalname,
+            file: excelFileCompare,
+          },
+          userCreator.id,
+          parseInt(recordingInstitution.id),
+        );
 
       const buffer = await this.firebaseStorageService.downloadFileToBuffer(
         `excel/${baseMovement.excelFile.filename}/${baseMovement.excelFile.filename}`,
@@ -109,13 +133,16 @@ export class ComparisonService {
       } as Express.Multer.File;
 
       if (!excelCompareFile) {
-        throw new InternalServerErrorException('No se encontró el archivo Excel registrado.');
+        throw new InternalServerErrorException(
+          'No se encontró el archivo Excel registrado.',
+        );
       }
 
-      const comparativeMovement = await this.comparativeMovementsService.createComparativeMovement({
-        excelFileId: excelCompareFile.id,
-        status: true,
-      });
+      const comparativeMovement =
+        await this.comparativeMovementsService.createComparativeMovement({
+          excelFileId: excelCompareFile.id,
+          status: true,
+        });
 
       await this.historicalComparisonsService.createHistoricalComparison({
         baseMovementId: baseMovement.id,
@@ -123,14 +150,14 @@ export class ComparisonService {
         status: true,
       });
 
-      const feedbackResult = await this.feedbackConnectionService.sendFeedbackRequest(
-        baseExcelFile,
-        excelFileCompare,
-        baseMovement.initialJoint.id,
-      );
-      
-      return feedbackResult;
+      const feedbackResult =
+        await this.feedbackConnectionService.sendFeedbackRequest(
+          baseExcelFile,
+          excelFileCompare,
+          baseMovement.initialJoint.id,
+        );
 
+      return feedbackResult;
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
