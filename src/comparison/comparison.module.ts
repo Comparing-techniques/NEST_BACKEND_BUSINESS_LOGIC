@@ -14,6 +14,8 @@ import {
   ComparativeMovement,
   ExcelFile,
   HistoricalComparison,
+  RecordingInstitution,
+  User,
   VideoRecording,
 } from 'src/entities';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -29,6 +31,8 @@ import { ComparativeMovementsService } from './services/comparative-movements/co
       BaseMovement,
       HistoricalComparison,
       ComparativeMovement,
+      User,
+      RecordingInstitution,
     ]),
     AuthModule,
     HttpModule,

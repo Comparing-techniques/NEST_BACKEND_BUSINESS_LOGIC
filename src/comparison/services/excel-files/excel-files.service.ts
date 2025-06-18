@@ -34,8 +34,8 @@ export class ExcelFilesService {
 
   async createExcelRecording(
     saveExcelFileRequestDto: SaveExcelFileRequestDto,
-    userId: number,
-    recordingInstitutionId: number,
+    user: User,
+    recordingInstitution: RecordingInstitution,
   ) {
     try {
       const filePath = `excel/${saveExcelFileRequestDto.fileName}`;
@@ -47,10 +47,8 @@ export class ExcelFilesService {
 
       const excelFileObj = this.excelFileRepository.create({
         filename: saveExcelFileRequestDto.fileName,
-        uploader: { id: userId } as User,
-        recordingInstitution: {
-          id: recordingInstitutionId,
-        } as RecordingInstitution,
+        uploader: user,
+        recordingInstitution,
         fileUrl: excelUrl,
       });
 

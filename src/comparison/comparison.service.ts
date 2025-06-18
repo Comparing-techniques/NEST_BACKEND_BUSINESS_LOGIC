@@ -17,7 +17,7 @@ import {
   invalidFileType,
   isAllowedExtension,
 } from 'src/utils/FilesValidations';
-import { BaseMovement } from 'src/entities';
+import { BaseMovement, ExcelFile, User } from 'src/entities';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { notFoundById } from 'src/utils/DtoValidators';
@@ -29,9 +29,12 @@ import { jointEntitieToJointResponseDto } from 'src/mappers/Joint.mapper';
 import { FeedbackConnectionService } from './services/feedback-connection/feedback-connection.service';
 import { FirebaseStorageService } from 'src/Storage/firebasestorage.service';
 import { ComparativeMovementsService } from './services/comparative-movements/comparative-movements.service';
-import { ComparativeMovementRequestDto } from './dto/CompartiveMovement/ComparativeMovementRequest.dto';
 import { HistoricalComparisonsService } from './services/historical-comparisons/historical-comparisons.service';
 import { ComparisonResponse } from './dto/ComparisonResponse.dto';
+import { HistoricalComparisonResponseDto } from './dto/HistoricalComparisons/HistoricalComparisonResponse.dto';
+import { RecordingInstitution } from '../entities/RecordingInstitution.entity';
+import { RecordingInstitutionEntitieToRecordingInstitutionResponseDto } from 'src/mappers/RecordingInstitution.mapper';
+import { userEntityToResponseDto } from 'src/mappers/User.mapper';
 
 @Injectable()
 export class ComparisonService {
@@ -39,16 +42,38 @@ export class ComparisonService {
     @InjectRepository(BaseMovement)
     private readonly baseMovementRepository: Repository<BaseMovement>,
 
-    private readonly authService: AuthService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+
+    @InjectRepository(RecordingInstitution)
+    private readonly recordingInstitutionRepository: Repository<RecordingInstitution>,
+
+    @InjectRepository(ExcelFile)
+    private readonly excelFileRepository: Repository<ExcelFile>,
+
     private readonly jointService: JointService,
     private readonly excelFilesService: ExcelFilesService,
     private readonly videoRecordingsService: VideoRecordingsService,
     private readonly firebaseStorageService: FirebaseStorageService,
     private readonly feedbackConnectionService: FeedbackConnectionService,
-    private readonly recordingInstitutionService: RecordingInstitutionService,
     private readonly comparativeMovementsService: ComparativeMovementsService,
     private readonly historicalComparisonsService: HistoricalComparisonsService,
   ) {}
+
+  async getComparisonsByUserIdThatMadeTheComparison(
+    userId: number,
+  ): Promise<HistoricalComparisonResponseDto[]> {
+    try {
+      const historicalComparisons =
+        await this.historicalComparisonsService.findAllByUserIdThatMadeTheComparison(
+          userId,
+        );
+
+      return historicalComparisons;
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
 
   async getComparisonByHistoricalId(historicalId: number) {
     try {
@@ -75,20 +100,19 @@ export class ComparisonService {
         excelFileCompare,
       } = createComparisonDto;
 
-      const userCreator = await this.authService.findUserById(
-        parseInt(userId),
-        'token',
-      );
+      const userEntitie = await this.userRepository.findOne({
+        where: { id: parseInt(userId) },
+      });
 
-      if (!userCreator)
+      if (!userEntitie)
         throw new BadRequestException(notFoundById(parseInt(userId), 'User'));
 
-      const recordingInstitution =
-        await this.recordingInstitutionService.findOne(
-          parseInt(recordingInstitutionId),
-        );
+      const recordingInstitutionEntitie =
+        await this.recordingInstitutionRepository.findOne({
+          where: { id: parseInt(recordingInstitutionId) },
+        });
 
-      if (!recordingInstitution)
+      if (!recordingInstitutionEntitie)
         throw new BadRequestException(
           notFoundById(
             parseInt(recordingInstitutionId),
@@ -111,15 +135,35 @@ export class ComparisonService {
           invalidFileType(excelFileCompare.originalname),
         );
 
-      const excelCompareFile =
-        await this.excelFilesService.createExcelRecording(
+      const existExcelComparativeMovement =
+        await this.excelFilesService.existsExcelFileByFileName(
+          excelFileCompare.originalname,
+        );
+
+      let excelCompareFile: ExcelFile;
+      if (!existExcelComparativeMovement) {
+        excelCompareFile = await this.excelFilesService.createExcelRecording(
           {
             fileName: excelFileCompare.originalname,
             file: excelFileCompare,
           },
-          userCreator.id,
-          parseInt(recordingInstitution.id),
+          userEntitie,
+          recordingInstitutionEntitie,
         );
+      } else {
+        const excelFile = await this.excelFileRepository.findOne({
+          where: { filename: excelFileCompare.originalname },
+        });
+
+        if (!excelFile) {
+          throw new InternalServerErrorException(
+            excelFileCompare.originalname,
+            'No se encontró el archivo Excel al buscarlo por nombre.',
+          );
+        }
+
+        excelCompareFile = excelFile;
+      }
 
       const buffer = await this.firebaseStorageService.downloadFileToBuffer(
         `excel/${baseMovement.excelFile.filename}/${baseMovement.excelFile.filename}`,
@@ -138,6 +182,8 @@ export class ComparisonService {
         );
       }
 
+      console.log('Excel comparar');
+      console.log(excelCompareFile);
       const comparativeMovement =
         await this.comparativeMovementsService.createComparativeMovement({
           excelFileId: excelCompareFile.id,
@@ -167,15 +213,14 @@ export class ComparisonService {
     try {
       await this.validateFiles(baseMovementRequest);
 
-      const userCreator = await this.authService.findUserById(
-        parseInt(baseMovementRequest.userId),
-        'token',
-      );
+      const userCreator = await this.userRepository.findOne({
+        where: { id: parseInt(baseMovementRequest.userId) },
+      });
 
       const recordingInstitution =
-        await this.recordingInstitutionService.findOne(
-          parseInt(baseMovementRequest.recordingInstitutionId),
-        );
+        await this.recordingInstitutionRepository.findOne({
+          where: { id: parseInt(baseMovementRequest.recordingInstitutionId) },
+        });
 
       const initialJoint = await this.jointService.findOne(
         parseInt(baseMovementRequest.initialJointId),
@@ -210,8 +255,8 @@ export class ComparisonService {
           fileName: baseMovementRequest.excelFile.originalname,
           file: baseMovementRequest.excelFile,
         },
-        userCreator.id,
-        parseInt(recordingInstitution.id),
+        userCreator,
+        recordingInstitution,
       );
 
       const baseMovementToDB = this.baseMovementRepository.create({
@@ -228,7 +273,9 @@ export class ComparisonService {
           baseMovement,
           baseExcelEntitieToBaseExcelFileResponseDto(
             excelRecorded,
-            recordingInstitution,
+            RecordingInstitutionEntitieToRecordingInstitutionResponseDto(
+              recordingInstitution,
+            ),
             excelRecorded.fileUrl,
           ),
           videoRecordingEntitieToVideoRecordingResponseDto(
@@ -236,7 +283,7 @@ export class ComparisonService {
             videoRecorded.fileUrl,
           ),
           jointEntitieToJointResponseDto(initialJoint),
-          userCreator,
+          userEntityToResponseDto(userCreator),
         );
 
       return baseMovementResponseDto;
@@ -248,7 +295,6 @@ export class ComparisonService {
   private async validateFiles(
     baseMovementRequest: CreateBaseMovementRequestDto,
   ) {
-    console.log(baseMovementRequest);
     const existVideoRecording =
       await this.videoRecordingsService.existsVideoRecordingByFileName(
         baseMovementRequest['videoRecordingFile'].originalname,

@@ -1,4 +1,4 @@
-import { SaveExcelFileResponseDto } from "../ExcelFile/SaveExcelFileResponse.dto";
+import { SaveExcelFileResponseDto } from '../ExcelFile/SaveExcelFileResponse.dto';
 
 export class ComparativeMovementResponseDto {
   id: number;

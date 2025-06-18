@@ -32,9 +32,17 @@ export class ComparisonController {
 
   @Get('/historical/:id')
   @UseGuards(UserGuardGuard)
-  async findOne(@Param('id') historicalId: number) {
+  async findOneByHistoricalId(@Param('id') historicalId: number) {
     return await this.comparisonService.getComparisonByHistoricalId(
       historicalId,
+    );
+  }
+
+  @Get('/user/:id')
+  @UseGuards(UserGuardGuard)
+  async findComparisonsMadeByUserId(@Param('id') userId: number) {
+    return await this.comparisonService.getComparisonsByUserIdThatMadeTheComparison(
+      userId,
     );
   }
 

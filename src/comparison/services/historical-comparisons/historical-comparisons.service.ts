@@ -11,13 +11,16 @@ import {
   BaseMovement,
   ComparativeMovement,
   HistoricalComparison,
+  User,
 } from 'src/entities';
 
 import { notFoundById } from 'src/utils/DtoValidators';
 import { Repository } from 'typeorm';
 import { FeedbackConnectionService } from '../feedback-connection/feedback-connection.service';
-import { isAllowedExtension } from 'src/utils/FilesValidations';
 import { FirebaseStorageService } from 'src/Storage/firebasestorage.service';
+import { UserService } from 'src/user/user.service';
+import { HistoricalComparisonResponseDto } from '../../dto/HistoricalComparisons/HistoricalComparisonResponse.dto';
+import { historicalListToHistoricalResponseDtoList } from 'src/mappers/HistoricalComparison.mapper';
 
 @Injectable()
 export class HistoricalComparisonsService {
@@ -30,9 +33,55 @@ export class HistoricalComparisonsService {
 
     @InjectRepository(ComparativeMovement)
     private readonly comparativeMovementRepository: Repository<ComparativeMovement>,
+
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly feedbackConnectionService: FeedbackConnectionService,
     private readonly firebaseStorageService: FirebaseStorageService,
   ) {}
+
+  async findAllByUserIdThatMadeTheComparison(
+    userId: number,
+  ): Promise<HistoricalComparisonResponseDto[]> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId, status: true },
+        relations: ['position'],
+      });
+
+      if (!user) throw new BadRequestException(notFoundById(userId, 'User'));
+
+      const historicalComparisons =
+        await this.historicalComparisonRepository.find({
+          where: {
+            comparativeMovement: {
+              excelFile: {
+                uploader: {
+                  id: Number(userId),
+                },
+              },
+            },
+            status: true,
+          },
+          relations: [
+            'baseMovement',
+            'comparativeMovement',
+            'comparativeMovement.excelFile',
+            'comparativeMovement.excelFile.uploader',
+          ],
+        });
+
+      if (!historicalComparisons || historicalComparisons.length === 0) {
+        throw new BadRequestException(
+          'No se encontraron comparaciones históricas para el usuario.',
+        );
+      }
+
+      return historicalListToHistoricalResponseDtoList(historicalComparisons);
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
 
   async findOne(historicalId: number): Promise<ComparisonResponse> {
     try {
