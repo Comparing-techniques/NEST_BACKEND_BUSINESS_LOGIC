@@ -24,11 +24,16 @@ import {
   noOneFilesProvided,
   noTwoFilesProvided,
 } from 'src/utils/FilesValidations';
+import { BaseMovementsService } from './services/base-movements/base-movements.service';
 
 @Controller('comparison')
 export class ComparisonController {
+
   UserGuardGuard: any;
-  constructor(private readonly comparisonService: ComparisonService) {}
+
+  constructor(
+    private readonly comparisonService: ComparisonService,
+  ) {}
 
   @Get('/historical/:id')
   @UseGuards(UserGuardGuard)
@@ -44,6 +49,12 @@ export class ComparisonController {
     return await this.comparisonService.getComparisonsByUserIdThatMadeTheComparison(
       userId,
     );
+  }
+
+  @Get('/base-movements')
+  @UseGuards(UserGuardGuard)
+  async findAllBaseMovements() {
+    return await this.comparisonService.findAllBaseMovements();
   }
 
   @Post()

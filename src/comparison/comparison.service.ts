@@ -35,6 +35,7 @@ import { HistoricalComparisonResponseDto } from './dto/HistoricalComparisons/His
 import { RecordingInstitution } from '../entities/RecordingInstitution.entity';
 import { RecordingInstitutionEntitieToRecordingInstitutionResponseDto } from 'src/mappers/RecordingInstitution.mapper';
 import { userEntityToResponseDto } from 'src/mappers/User.mapper';
+import { BaseMovementsService } from './services/base-movements/base-movements.service';
 
 @Injectable()
 export class ComparisonService {
@@ -51,6 +52,7 @@ export class ComparisonService {
     @InjectRepository(ExcelFile)
     private readonly excelFileRepository: Repository<ExcelFile>,
 
+    private readonly baseMovementsService: BaseMovementsService,
     private readonly jointService: JointService,
     private readonly excelFilesService: ExcelFilesService,
     private readonly videoRecordingsService: VideoRecordingsService,
@@ -89,6 +91,10 @@ export class ComparisonService {
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
+  }
+
+  async findAllBaseMovements() {
+    return await this.baseMovementsService.findAll();
   }
 
   async create(createComparisonDto: CreateComparisonRequestDto) {
