@@ -196,11 +196,13 @@ export class ComparisonService {
           status: true,
         });
 
-      await this.historicalComparisonsService.createHistoricalComparison({
+      const historical = await this.historicalComparisonsService.createHistoricalComparison({
         baseMovementId: baseMovement.id,
         comparativeMovementId: comparativeMovement.id,
         status: true,
       });
+
+      console.log("Historial va: ", historical)
 
       const feedbackResult =
         await this.feedbackConnectionService.sendFeedbackRequest(
