@@ -99,6 +99,10 @@ export class ComparisonService {
 
   async create(createComparisonDto: CreateComparisonRequestDto) {
     try {
+      // UserId es el user de la sesión que está haciendo la comparación
+      // recordingInstitutionId es el de la institución donde se grabo el comparative
+      // baseExcelFileId es el id del movimiento base que se va a comparar
+      // excelFileCompare es el archivo excel que se va a comparar
       const {
         userId,
         recordingInstitutionId,
@@ -141,35 +145,14 @@ export class ComparisonService {
           invalidFileType(excelFileCompare.originalname),
         );
 
-      const existExcelComparativeMovement =
-        await this.excelFilesService.existsExcelFileByFileName(
-          excelFileCompare.originalname,
-        );
-
-      let excelCompareFile: ExcelFile;
-      if (!existExcelComparativeMovement) {
-        excelCompareFile = await this.excelFilesService.createExcelRecording(
-          {
-            fileName: excelFileCompare.originalname,
-            file: excelFileCompare,
-          },
-          userEntitie,
-          recordingInstitutionEntitie,
-        );
-      } else {
-        const excelFile = await this.excelFileRepository.findOne({
-          where: { filename: excelFileCompare.originalname },
-        });
-
-        if (!excelFile) {
-          throw new InternalServerErrorException(
-            excelFileCompare.originalname,
-            'No se encontró el archivo Excel al buscarlo por nombre.',
-          );
-        }
-
-        excelCompareFile = excelFile;
-      }
+      const excelCompareFile: ExcelFile = await this.excelFilesService.createExcelRecording(
+        {
+          fileName: excelFileCompare.originalname,
+          file: excelFileCompare,
+        },
+        userEntitie,
+        recordingInstitutionEntitie,
+      );
 
       const buffer = await this.firebaseStorageService.downloadFileToBuffer(
         `excel/${baseMovement.excelFile.filename}/${baseMovement.excelFile.filename}`,
@@ -187,29 +170,26 @@ export class ComparisonService {
           'No se encontró el archivo Excel registrado.',
         );
       }
-
-      console.log('Excel comparar');
-      console.log(excelCompareFile);
-      const comparativeMovement =
-        await this.comparativeMovementsService.createComparativeMovement({
-          excelFileId: excelCompareFile.id,
-          status: true,
-        });
-
-      const historical = await this.historicalComparisonsService.createHistoricalComparison({
-        baseMovementId: baseMovement.id,
-        comparativeMovementId: comparativeMovement.id,
-        status: true,
-      });
-
-      console.log("Historial va: ", historical)
-
+      
       const feedbackResult =
         await this.feedbackConnectionService.sendFeedbackRequest(
           baseExcelFile,
           excelFileCompare,
           baseMovement.initialJoint.id,
         );
+
+      const comparativeMovement =
+        await this.comparativeMovementsService.createComparativeMovement({
+          excelFileId: excelCompareFile.id,
+          status: true,
+        });
+
+      await this.historicalComparisonsService.createHistoricalComparison({
+        baseMovementId: baseMovement.id,
+        comparativeMovementId: comparativeMovement.id,
+        status: true,
+      });
+
 
       return feedbackResult;
     } catch (error) {

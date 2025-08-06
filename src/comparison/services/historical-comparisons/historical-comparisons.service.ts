@@ -48,7 +48,7 @@ export class HistoricalComparisonsService {
         where: { id: userId, status: true },
         relations: ['position'],
       });
-
+     
       if (!user) throw new BadRequestException(notFoundById(userId, 'User'));
 
       const historicalComparisons =

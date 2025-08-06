@@ -48,6 +48,14 @@ export const historicalListToHistoricalResponseDtoList = (
     const comparisonMovement: ComparativeMovementResponseDto =
       comparativeMovementToComparativeResopnseDto(hc.comparativeMovement);
 
+    const historialDto = historicalToHistoricalResponseDto(
+      hc,
+      baseMovement,
+      comparisonMovement,
+    );
+
+    console.log("------------Historial DTO:", historialDto);
+
     return historicalToHistoricalResponseDto(
       hc,
       baseMovement,
