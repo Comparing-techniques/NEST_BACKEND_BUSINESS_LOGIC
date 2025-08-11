@@ -145,15 +145,6 @@ export class ComparisonService {
           invalidFileType(excelFileCompare.originalname),
         );
 
-      const excelCompareFile: ExcelFile = await this.excelFilesService.createExcelRecording(
-        {
-          fileName: excelFileCompare.originalname,
-          file: excelFileCompare,
-        },
-        userEntitie,
-        recordingInstitutionEntitie,
-      );
-
       const buffer = await this.firebaseStorageService.downloadFileToBuffer(
         `excel/${baseMovement.excelFile.filename}/${baseMovement.excelFile.filename}`,
       );
@@ -165,10 +156,37 @@ export class ComparisonService {
         buffer,
       } as Express.Multer.File;
 
-      if (!excelCompareFile) {
-        throw new InternalServerErrorException(
-          'No se encontró el archivo Excel registrado.',
+      const existExcelComparativeMovement = await this.excelFilesService.existsExcelFileByFileName(
+        excelFileCompare.originalname,
+      );
+
+      let excelCompareFile: ExcelFile;
+
+      if (!existExcelComparativeMovement) {
+        
+        excelCompareFile = await this.excelFilesService.createExcelRecording(
+          {
+            fileName: excelFileCompare.originalname,
+            file: excelFileCompare,
+          },
+          userEntitie,
+          recordingInstitutionEntitie,
         );
+
+      } else {
+
+        const foundExcel = await this.excelFileRepository.findOne({
+          where: { filename: excelFileCompare.originalname },
+        });
+
+        if (!foundExcel) {
+          throw new InternalServerErrorException(
+            excelFileCompare.originalname,
+            'No se encontró el archivo Excel al buscarlo por nombre.',
+          );
+        }
+
+        excelCompareFile = foundExcel;
       }
       
       const feedbackResult =
@@ -189,7 +207,6 @@ export class ComparisonService {
         comparativeMovementId: comparativeMovement.id,
         status: true,
       });
-
 
       return feedbackResult;
     } catch (error) {
